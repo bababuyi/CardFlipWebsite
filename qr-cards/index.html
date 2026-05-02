@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR Cards</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0d0f;
+      --surface: #16161a;
+      --border: rgba(255,255,255,0.07);
+      --accent: #c8f135;
+      --accent-dim: rgba(200,241,53,0.12);
+      --text: #f0f0f0;
+      --muted: #6b6b7a;
+      --card-w: 480px;
+      --card-h: 300px;
+      --radius: 16px;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 20px 64px;
+      gap: 0;
+    }
+
+    /* Subtle grid texture */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      margin-top: 10px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .cards-grid {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 28px;
+      width: 100%;
+      max-width: 1040px;
+    }
+
+    /* --- Card --- */
+    .card-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .card-label {
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .card {
+      width: var(--card-w);
+      max-width: 90vw;
+      height: var(--card-h);
+      perspective: 1200px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .card:focus-visible .card-inner {
+      box-shadow: 0 0 0 3px var(--accent);
+      border-radius: var(--radius);
+    }
+
+    .card-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.55s cubic-bezier(0.45, 0.05, 0.55, 0.95);
+      border-radius: var(--radius);
+    }
+
+    .card.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .card-front,
+    .card-back {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    /* Front face — the hidden side */
+    .card-front {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+
+    .card-front .icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--accent-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      font-size: 22px;
+      transition: transform 0.2s;
+    }
+
+    .card:hover .card-front .icon {
+      transform: scale(1.1);
+    }
+
+    .card-front .hint {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    /* Subtle shimmer on front */
+    .card-front::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        135deg,
+        transparent 0%,
+        rgba(255,255,255,0.025) 50%,
+        transparent 100%
+      );
+      pointer-events: none;
+    }
+
+    /* Back face — the image */
+    .card-back {
+      transform: rotateY(180deg);
+      background: #111;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    }
+
+    .card-back img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* --- Controls --- */
+    .controls {
+      position: relative;
+      z-index: 1;
+      margin-top: 44px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    button {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 24px;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s;
+    }
+
+    button:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #0d0d0f;
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 0 20px rgba(200,241,53,0.35);
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.05);
+    }
+
+    /* Flip-all hint badge */
+    .flip-badge {
+      position: relative;
+      z-index: 1;
+      margin-top: 32px;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    /* Entering animation */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-wrap {
+      animation: fadeUp 0.5s ease both;
+    }
+
+    .card-wrap:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">✦ Daily Draw</div>
+  <h1>Your Cards</h1>
+  <p class="subtitle">Tap a card to reveal · Redraw anytime</p>
+</header>
+
+<div class="cards-grid" id="cardsGrid"></div>
+
+<div class="controls">
+  <button class="btn-primary" id="btnRedraw" title="Pick new cards">↺ Redraw</button>
+  <button class="btn-secondary" id="btnFlipAll">Flip All</button>
+</div>
+
+<p class="flip-badge" id="statusBadge"></p>
+
+<script>
+  const SETS = {
+    A: ["a1.png","a2.png","a3.png","a4.png","a5.png","a6.png"],
+    B: ["b1.png","b2.png","b3.png","b4.png","b5.png","b6.png"],
+  };
+
+  function getRandom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function buildCard(label, imgSrc) {
+    const wrap = document.createElement('div');
+    wrap.className = 'card-wrap';
+
+    const lbl = document.createElement('div');
+    lbl.className = 'card-label';
+    lbl.textContent = `Set ${label}`;
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('role', 'button');
+    card.setAttribute('aria-label', `Card from Set ${label}. Press Enter to flip.`);
+
+    card.innerHTML = `
+      <div class="card-inner">
+        <div class="card-front">
+          <div class="icon">◈</div>
+          <div class="hint">Tap to reveal</div>
+        </div>
+        <div class="card-back">
+          <img src="${imgSrc}" alt="QR Card ${label}" loading="lazy" />
+        </div>
+      </div>
+    `;
+
+    card.addEventListener('click', () => {
+      card.classList.toggle('flipped');
+      updateBadge();
+    });
+
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        card.classList.toggle('flipped');
+        updateBadge();
+      }
+    });
+
+    wrap.appendChild(lbl);
+    wrap.appendChild(card);
+    return wrap;
+  }
+
+  function render() {
+    const grid = document.getElementById('cardsGrid');
+    grid.innerHTML = '';
+
+    for (const [label, arr] of Object.entries(SETS)) {
+      const img = getRandom(arr);
+      grid.appendChild(buildCard(label, img));
+    }
+
+    updateBadge();
+  }
+
+  function updateBadge() {
+    const cards = document.querySelectorAll('.card');
+    const flipped = [...cards].filter(c => c.classList.contains('flipped')).length;
+    const badge = document.getElementById('statusBadge');
+    badge.textContent = flipped === cards.length
+      ? '✓ All revealed'
+      : flipped === 0
+        ? ''
+        : `${flipped} of ${cards.length} revealed`;
+  }
+
+  document.getElementById('btnRedraw').addEventListener('click', () => {
+    // Fade out then redraw
+    const grid = document.getElementById('cardsGrid');
+    grid.style.opacity = '0';
+    grid.style.transform = 'translateY(8px)';
+    grid.style.transition = 'opacity 0.2s, transform 0.2s';
+    setTimeout(() => {
+      render();
+      grid.style.opacity = '1';
+      grid.style.transform = '';
+    }, 220);
+  });
+
+  document.getElementById('btnFlipAll').addEventListener('click', () => {
+    const cards = document.querySelectorAll('.card');
+    const allFlipped = [...cards].every(c => c.classList.contains('flipped'));
+    cards.forEach(c => {
+      if (allFlipped) c.classList.remove('flipped');
+      else c.classList.add('flipped');
+    });
+    document.getElementById('btnFlipAll').textContent = allFlipped ? 'Flip All' : 'Unflip All';
+    updateBadge();
+  });
+
+  render();
+</script>
+
+</body>
+</html>
